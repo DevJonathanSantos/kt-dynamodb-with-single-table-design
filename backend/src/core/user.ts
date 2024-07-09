@@ -7,7 +7,11 @@ export interface UserProps {
     id: string;
     name: string;
     email: string;
-    address: {};
+    address: {
+        state: string;
+        city: string;
+        street: string;
+    };
 }
 
 export class User extends Item<UserProps> {
@@ -24,7 +28,7 @@ export class User extends Item<UserProps> {
             id: { S: this.props.id },
             name: { S: this.props.name },
             email: { S: this.props.email },
-            address: { S: this.props.address },
+            address: { S: JSON.stringify(this.props.address) },
         };
 
         return item;
@@ -33,7 +37,7 @@ export class User extends Item<UserProps> {
     static fromDynamoItem(item: Record<string, AttributeValue>): User {
         const { id, name, email, address } = item;
 
-        return new User({ id, name, email, address });
+        return new User({ id: id.S!, name: name.S!, email: email.S!, address: JSON.parse(address?.S ?? '{}') });
     }
 
     static create({ name, email, address }: UserProps): User {
