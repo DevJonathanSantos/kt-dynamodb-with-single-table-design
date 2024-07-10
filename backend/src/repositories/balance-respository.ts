@@ -43,8 +43,13 @@ export class BalanceRepository implements IBalanceRepository {
             const query = new QueryCommand({
                 TableName: this.tableName,
                 KeyConditionExpression: 'PK = :pk ',
+                FilterExpression: '#status=:status',
                 ExpressionAttributeValues: {
                     ':pk': { S: `BALANCE#WALLET#${walletId}` },
+                    ':status': { S: `ACTIVE` },
+                },
+                ExpressionAttributeNames: {
+                    '#status': 'status',
                 },
             });
 

@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { Item } from './item';
 
 export interface UserProps {
-    id: string;
+    id?: string;
     name: string;
     email: string;
     address: {
@@ -19,13 +19,20 @@ export class User extends Item<UserProps> {
         return `USER`;
     }
     get sk(): string {
-        return this.props.id;
+        return this.props.id!;
+    }
+
+    static getKey(id: string) {
+        return {
+            pk: `USER`,
+            sk: id,
+        };
     }
 
     toDynamoItem(): Record<string, AttributeValue> {
         const item: Record<string, AttributeValue> = {
             ...this.keys(),
-            id: { S: this.props.id },
+            id: { S: this.props.id! },
             name: { S: this.props.name },
             email: { S: this.props.email },
             address: { S: JSON.stringify(this.props.address) },
