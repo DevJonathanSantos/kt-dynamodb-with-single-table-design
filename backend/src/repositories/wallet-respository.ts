@@ -1,15 +1,16 @@
 import { AttributeValue, DynamoDBClient, GetItemCommand, PutItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb';
-import { User } from '../core/user';
+import { Wallet } from '../core/wallet';
 import { decrypt, encrypt } from '../utils/encrypt-pagination';
 
 export interface IUserRepository {
-    create(user: User): Promise<void>;
-    listAll(): Promise<User[] | undefined>;
+    create(wallet: Wallet): Promise<void>;
+    listByUserId(userId: string): Promise<Wallet[] | undefined>;
     listPaginate(
+        filter: { userId: string },
         pageSize: number,
         paginationToken: string,
-    ): Promise<{ items: User[]; paginationToken: string } | undefined>;
-    get(pk: string, sk: string): Promise<User | undefined>;
+    ): Promise<{ items: Wallet[]; paginationToken: string } | undefined>;
+    get(pk: string, sk: string): Promise<Wallet | undefined>;
 }
 
 export class UserRepository implements IUserRepository {
@@ -21,7 +22,7 @@ export class UserRepository implements IUserRepository {
         this.tableName = process.env.DATABASE_NAME as string;
     }
 
-    async create(user: User): Promise<void> {
+    async create(user: Wallet): Promise<void> {
         try {
             const command = new PutItemCommand({
                 TableName: this.tableName,
@@ -37,23 +38,19 @@ export class UserRepository implements IUserRepository {
         }
     }
 
-    async listAll(): Promise<User[] | undefined> {
+    async listByUserId(userId: string): Promise<Wallet[] | undefined> {
         try {
             const query = new QueryCommand({
                 TableName: this.tableName,
-                KeyConditionExpression: 'PK = :pk and  begins_with(SK,:status)',
+                KeyConditionExpression: 'PK = :pk ',
                 ExpressionAttributeValues: {
-                    ':pk': { S: `USER` },
-                    ':status': { S: `ACTIVE` },
-                },
-                ExpressionAttributeNames: {
-                    '#status': 'status',
+                    ':pk': { S: `WALLET#USER#${userId}` },
                 },
             });
 
             let lastKey: Record<string, AttributeValue> | undefined;
 
-            let result: User[] = [];
+            let result: Wallet[] = [];
 
             do {
                 query.input.ExclusiveStartKey = lastKey;
@@ -62,7 +59,7 @@ export class UserRepository implements IUserRepository {
 
                 lastKey = LastEvaluatedKey;
 
-                const items = Items?.map((item) => User.fromDynamoItem(item));
+                const items = Items?.map((item) => Wallet.fromDynamoItem(item));
 
                 if (items) result = result.concat(items);
             } while (lastKey);
@@ -74,25 +71,22 @@ export class UserRepository implements IUserRepository {
     }
 
     async listPaginate(
+        filter: { userId: string },
         pageSize: number,
         paginationToken: string,
-    ): Promise<{ items: User[]; paginationToken: string } | undefined> {
+    ): Promise<{ items: Wallet[]; paginationToken: string } | undefined> {
         try {
             const query = new QueryCommand({
                 TableName: this.tableName,
-                KeyConditionExpression: 'PK = :pk and  begins_with(SK,:status)',
+                KeyConditionExpression: 'PK = :pk',
                 ExpressionAttributeValues: {
-                    ':pk': { S: `USER` },
-                    ':status': { S: `ACTIVE` },
-                },
-                ExpressionAttributeNames: {
-                    '#status': 'status',
+                    ':pk': { S: `WALLET#USER#${filter.userId}` },
                 },
             });
 
             let lastKey: Record<string, AttributeValue> | undefined;
 
-            let result: User[] = [];
+            let result: Wallet[] = [];
 
             do {
                 query.input.ExclusiveStartKey = JSON.parse(decrypt(paginationToken));
@@ -101,7 +95,7 @@ export class UserRepository implements IUserRepository {
 
                 lastKey = LastEvaluatedKey;
 
-                const items = Items?.map((item) => User.fromDynamoItem(item));
+                const items = Items?.map((item) => Wallet.fromDynamoItem(item));
 
                 if (items) result = result.concat(items);
             } while (result.length == pageSize || !lastKey);
@@ -115,7 +109,7 @@ export class UserRepository implements IUserRepository {
         }
     }
 
-    async get(pk: string, sk: string): Promise<User | undefined> {
+    async get(pk: string, sk: string): Promise<Wallet | undefined> {
         try {
             const command = new GetItemCommand({
                 TableName: this.tableName,
@@ -128,7 +122,7 @@ export class UserRepository implements IUserRepository {
 
             if (!Item) return;
 
-            return User.fromDynamoItem(Item);
+            return Wallet.fromDynamoItem(Item);
         } catch (error) {
             throw error;
         }
