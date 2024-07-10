@@ -1,19 +1,18 @@
 import { AttributeValue, DynamoDBClient, GetItemCommand, PutItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb';
-import { Wallet } from '../core/wallet';
+import { Asset } from '../core/asset';
 import { decrypt, encrypt } from '../utils/encrypt-pagination';
 
-export interface IWalletRepository {
-    create(wallet: Wallet): Promise<void>;
-    listByUserId(userId: string): Promise<Wallet[] | undefined>;
+export interface IAssetRepository {
+    create(wallet: Asset): Promise<void>;
+    listAll(): Promise<Asset[] | undefined>;
     listPaginate(
-        filter: { userId: string },
         pageSize: number,
         paginationToken: string,
-    ): Promise<{ items: Wallet[]; paginationToken: string } | undefined>;
-    get(pk: string, sk: string): Promise<Wallet | undefined>;
+    ): Promise<{ items: Asset[]; paginationToken: string } | undefined>;
+    get(pk: string, sk: string): Promise<Asset | undefined>;
 }
 
-export class WalletRepository implements IWalletRepository {
+export class AssetRepository implements IAssetRepository {
     private client: DynamoDBClient;
     private tableName: string;
 
@@ -22,7 +21,7 @@ export class WalletRepository implements IWalletRepository {
         this.tableName = process.env.DATABASE_NAME as string;
     }
 
-    async create(user: Wallet): Promise<void> {
+    async create(user: Asset): Promise<void> {
         try {
             const command = new PutItemCommand({
                 TableName: this.tableName,
@@ -38,19 +37,19 @@ export class WalletRepository implements IWalletRepository {
         }
     }
 
-    async listByUserId(userId: string): Promise<Wallet[] | undefined> {
+    async listAll(): Promise<Asset[] | undefined> {
         try {
             const query = new QueryCommand({
                 TableName: this.tableName,
                 KeyConditionExpression: 'PK = :pk ',
                 ExpressionAttributeValues: {
-                    ':pk': { S: `WALLET#USER#${userId}` },
+                    ':pk': { S: `USER` },
                 },
             });
 
             let lastKey: Record<string, AttributeValue> | undefined;
 
-            let result: Wallet[] = [];
+            let result: Asset[] = [];
 
             do {
                 query.input.ExclusiveStartKey = lastKey;
@@ -59,7 +58,7 @@ export class WalletRepository implements IWalletRepository {
 
                 lastKey = LastEvaluatedKey;
 
-                const items = Items?.map((item) => Wallet.fromDynamoItem(item));
+                const items = Items?.map((item) => Asset.fromDynamoItem(item));
 
                 if (items) result = result.concat(items);
             } while (lastKey);
@@ -71,22 +70,21 @@ export class WalletRepository implements IWalletRepository {
     }
 
     async listPaginate(
-        filter: { userId: string },
         pageSize: number,
         paginationToken: string,
-    ): Promise<{ items: Wallet[]; paginationToken: string } | undefined> {
+    ): Promise<{ items: Asset[]; paginationToken: string } | undefined> {
         try {
             const query = new QueryCommand({
                 TableName: this.tableName,
                 KeyConditionExpression: 'PK = :pk',
                 ExpressionAttributeValues: {
-                    ':pk': { S: `WALLET#USER#${filter.userId}` },
+                    ':pk': { S: `USER` },
                 },
             });
 
             let lastKey: Record<string, AttributeValue> | undefined;
 
-            let result: Wallet[] = [];
+            let result: Asset[] = [];
 
             do {
                 query.input.ExclusiveStartKey = JSON.parse(decrypt(paginationToken));
@@ -95,7 +93,7 @@ export class WalletRepository implements IWalletRepository {
 
                 lastKey = LastEvaluatedKey;
 
-                const items = Items?.map((item) => Wallet.fromDynamoItem(item));
+                const items = Items?.map((item) => Asset.fromDynamoItem(item));
 
                 if (items) result = result.concat(items);
             } while (result.length == pageSize || !lastKey);
@@ -109,7 +107,7 @@ export class WalletRepository implements IWalletRepository {
         }
     }
 
-    async get(pk: string, sk: string): Promise<Wallet | undefined> {
+    async get(pk: string, sk: string): Promise<Asset | undefined> {
         try {
             const command = new GetItemCommand({
                 TableName: this.tableName,
@@ -122,7 +120,7 @@ export class WalletRepository implements IWalletRepository {
 
             if (!Item) return;
 
-            return Wallet.fromDynamoItem(Item);
+            return Asset.fromDynamoItem(Item);
         } catch (error) {
             throw error;
         }
