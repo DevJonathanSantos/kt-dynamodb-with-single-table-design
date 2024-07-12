@@ -21,6 +21,9 @@ export class User extends Item<UserProps> {
     get sk(): string {
         return this.props.id!;
     }
+    get data(): UserProps {
+        return this.props;
+    }
 
     static getKey(id: string) {
         return {

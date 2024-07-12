@@ -6,6 +6,6 @@ export class ListUsersUseCase {
     async execute() {
         const users = await this.userRepository.listAll();
 
-        return users;
+        return users?.map(({ data }) => data);
     }
 }

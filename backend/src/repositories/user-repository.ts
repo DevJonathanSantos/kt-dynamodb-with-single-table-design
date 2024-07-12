@@ -41,13 +41,10 @@ export class UserRepository implements IUserRepository {
         try {
             const query = new QueryCommand({
                 TableName: this.tableName,
-                KeyConditionExpression: 'PK = :pk and  begins_with(SK,:status)',
+                KeyConditionExpression: 'pk = :pk and  begins_with(sk,:status)',
                 ExpressionAttributeValues: {
                     ':pk': { S: `USER` },
-                    ':status': { S: `ACTIVE` },
-                },
-                ExpressionAttributeNames: {
-                    '#status': 'status',
+                    ':status': { S: `STATUS#ACTIVE` },
                 },
             });
 
@@ -80,13 +77,10 @@ export class UserRepository implements IUserRepository {
         try {
             const query = new QueryCommand({
                 TableName: this.tableName,
-                KeyConditionExpression: 'PK = :pk and  begins_with(SK,:status)',
+                KeyConditionExpression: 'pk = :pk and  begins_with(sk,:status)',
                 ExpressionAttributeValues: {
                     ':pk': { S: `USER` },
-                    ':status': { S: `ACTIVE` },
-                },
-                ExpressionAttributeNames: {
-                    '#status': 'status',
+                    ':status': { S: `STATUS#ACTIVE` },
                 },
             });
 
@@ -120,8 +114,8 @@ export class UserRepository implements IUserRepository {
             const command = new GetItemCommand({
                 TableName: this.tableName,
                 Key: {
-                    PK: { S: pk },
-                    SK: { S: sk },
+                    pk: { S: pk },
+                    sk: { S: sk },
                 },
             });
             const { Item } = await this.client.send(command);
