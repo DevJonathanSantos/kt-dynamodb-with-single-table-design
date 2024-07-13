@@ -13,7 +13,7 @@ export abstract class Item<Props> {
     public keys(): Record<string, AttributeValue> {
         return {
             pk: { S: `${this.pk}` },
-            sk: { S: `STATUS#ACTIVE#${this.sk}` },
+            sk: { S: `${this.sk}` },
         };
     }
 }

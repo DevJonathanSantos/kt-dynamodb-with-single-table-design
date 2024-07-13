@@ -1,5 +1,4 @@
 import { AttributeValue } from '@aws-sdk/client-dynamodb';
-import { randomUUID } from 'crypto';
 
 import { Item } from './item';
 
@@ -7,7 +6,7 @@ export interface WalletProps {
     id: string;
     name: string;
     userId: string;
-    totalConsolidate: string;
+    totalConsolidate: number;
 }
 
 export class Wallet extends Item<WalletProps> {
@@ -32,12 +31,15 @@ export class Wallet extends Item<WalletProps> {
     static fromDynamoItem(item: Record<string, AttributeValue>): Wallet {
         const { id, name, userId, totalConsolidate } = item;
 
-        return new Wallet({ id: id.S!, name: name.S!, userId: userId.S!, totalConsolidate: totalConsolidate.S! });
+        return new Wallet({
+            id: id.S!,
+            name: name.S!,
+            userId: userId.S!,
+            totalConsolidate: Number(totalConsolidate.S!),
+        });
     }
 
-    static create({ name, userId, totalConsolidate }: WalletProps): Wallet {
-        const id = randomUUID();
-
+    static create({ id, name, userId, totalConsolidate }: WalletProps): Wallet {
         return new Wallet({ id, name, userId, totalConsolidate });
     }
 }

@@ -1,18 +1,19 @@
 import { AttributeValue, DynamoDBClient, GetItemCommand, PutItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb';
-import { Asset } from '../core/asset';
+import { Wallet } from '../core/wallet';
 import { decrypt, encrypt } from '../utils/encrypt-pagination';
 
-export interface IAssetRepository {
-    create(wallet: Asset): Promise<void>;
-    listAll(): Promise<Asset[] | undefined>;
+export interface IWalletRepository {
+    create(wallet: Wallet): Promise<void>;
+    listByUserId(userId: string): Promise<Wallet[] | undefined>;
     listPaginate(
+        filter: { userId: string },
         pageSize: number,
         paginationToken: string,
-    ): Promise<{ items: Asset[]; paginationToken: string } | undefined>;
-    get(pk: string, sk: string): Promise<Asset | undefined>;
+    ): Promise<{ items: Wallet[]; paginationToken: string } | undefined>;
+    get(pk: string, sk: string): Promise<Wallet | undefined>;
 }
 
-export class AssetRepository implements IAssetRepository {
+export class WalletRepository implements IWalletRepository {
     private client: DynamoDBClient;
     private tableName: string;
 
@@ -21,11 +22,11 @@ export class AssetRepository implements IAssetRepository {
         this.tableName = process.env.DATABASE_NAME as string;
     }
 
-    async create(user: Asset): Promise<void> {
+    async create(wallet: Wallet): Promise<void> {
         try {
             const command = new PutItemCommand({
                 TableName: this.tableName,
-                Item: user.toDynamoItem(),
+                Item: wallet.toDynamoItem(),
             });
 
             const { $metadata } = await this.client.send(command);
@@ -37,19 +38,19 @@ export class AssetRepository implements IAssetRepository {
         }
     }
 
-    async listAll(): Promise<Asset[] | undefined> {
+    async listByUserId(userId: string): Promise<Wallet[] | undefined> {
         try {
             const query = new QueryCommand({
                 TableName: this.tableName,
                 KeyConditionExpression: 'PK = :pk ',
                 ExpressionAttributeValues: {
-                    ':pk': { S: `USER` },
+                    ':pk': { S: `WALLET#USER#${userId}` },
                 },
             });
 
             let lastKey: Record<string, AttributeValue> | undefined;
 
-            let result: Asset[] = [];
+            let result: Wallet[] = [];
 
             do {
                 query.input.ExclusiveStartKey = lastKey;
@@ -58,7 +59,7 @@ export class AssetRepository implements IAssetRepository {
 
                 lastKey = LastEvaluatedKey;
 
-                const items = Items?.map((item) => Asset.fromDynamoItem(item));
+                const items = Items?.map((item) => Wallet.fromDynamoItem(item));
 
                 if (items) result = result.concat(items);
             } while (lastKey);
@@ -70,21 +71,22 @@ export class AssetRepository implements IAssetRepository {
     }
 
     async listPaginate(
+        filter: { userId: string },
         pageSize: number,
         paginationToken: string,
-    ): Promise<{ items: Asset[]; paginationToken: string } | undefined> {
+    ): Promise<{ items: Wallet[]; paginationToken: string } | undefined> {
         try {
             const query = new QueryCommand({
                 TableName: this.tableName,
                 KeyConditionExpression: 'PK = :pk',
                 ExpressionAttributeValues: {
-                    ':pk': { S: `USER` },
+                    ':pk': { S: `WALLET#USER#${filter.userId}` },
                 },
             });
 
             let lastKey: Record<string, AttributeValue> | undefined;
 
-            let result: Asset[] = [];
+            let result: Wallet[] = [];
 
             do {
                 query.input.ExclusiveStartKey = JSON.parse(decrypt(paginationToken));
@@ -93,7 +95,7 @@ export class AssetRepository implements IAssetRepository {
 
                 lastKey = LastEvaluatedKey;
 
-                const items = Items?.map((item) => Asset.fromDynamoItem(item));
+                const items = Items?.map((item) => Wallet.fromDynamoItem(item));
 
                 if (items) result = result.concat(items);
             } while (result.length == pageSize || !lastKey);
@@ -107,7 +109,7 @@ export class AssetRepository implements IAssetRepository {
         }
     }
 
-    async get(pk: string, sk: string): Promise<Asset | undefined> {
+    async get(pk: string, sk: string): Promise<Wallet | undefined> {
         try {
             const command = new GetItemCommand({
                 TableName: this.tableName,
@@ -120,7 +122,7 @@ export class AssetRepository implements IAssetRepository {
 
             if (!Item) return;
 
-            return Asset.fromDynamoItem(Item);
+            return Wallet.fromDynamoItem(Item);
         } catch (error) {
             throw error;
         }

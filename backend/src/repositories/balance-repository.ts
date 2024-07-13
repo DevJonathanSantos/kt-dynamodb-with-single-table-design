@@ -22,11 +22,11 @@ export class BalanceRepository implements IBalanceRepository {
         this.tableName = process.env.DATABASE_NAME as string;
     }
 
-    async create(user: Balance): Promise<void> {
+    async create(balance: Balance): Promise<void> {
         try {
             const command = new PutItemCommand({
                 TableName: this.tableName,
-                Item: user.toDynamoItem(),
+                Item: balance.toDynamoItem(),
             });
 
             const { $metadata } = await this.client.send(command);

@@ -1,5 +1,4 @@
 import { AttributeValue } from '@aws-sdk/client-dynamodb';
-import { randomUUID } from 'crypto';
 
 import { Item } from './item';
 
@@ -19,7 +18,7 @@ export class User extends Item<UserProps> {
         return `USER`;
     }
     get sk(): string {
-        return this.props.id!;
+        return `STATUS#ACTIVE#${this.props.id!}`;
     }
     get data(): UserProps {
         return this.props;
@@ -50,9 +49,7 @@ export class User extends Item<UserProps> {
         return new User({ id: id.S!, name: name.S!, email: email.S!, address: JSON.parse(address?.S ?? '{}') });
     }
 
-    static create({ name, email, address }: UserProps): User {
-        const id = randomUUID();
-
+    static create({ id, name, email, address }: UserProps): User {
         return new User({ id, name, email, address });
     }
 }
