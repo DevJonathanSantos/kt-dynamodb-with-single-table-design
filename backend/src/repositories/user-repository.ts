@@ -1,5 +1,5 @@
 import { AttributeValue, DynamoDBClient, GetItemCommand, PutItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb';
-import { User } from '../core/user';
+import { User, UserProps } from '../core/user';
 import { decrypt, encrypt } from '../utils/encrypt-pagination';
 
 export interface IUserRepository {
@@ -8,7 +8,7 @@ export interface IUserRepository {
     listPaginate(
         pageSize: number,
         paginationToken: string,
-    ): Promise<{ items: User[]; paginationToken: string } | undefined>;
+    ): Promise<{ items: UserProps[]; paginationToken: string } | undefined>;
     get(pk: string, sk: string): Promise<User | undefined>;
 }
 
@@ -73,15 +73,16 @@ export class UserRepository implements IUserRepository {
     async listPaginate(
         pageSize: number,
         paginationToken: string,
-    ): Promise<{ items: User[]; paginationToken: string } | undefined> {
+    ): Promise<{ items: UserProps[]; paginationToken: string } | undefined> {
         try {
             const query = new QueryCommand({
                 TableName: this.tableName,
-                KeyConditionExpression: 'pk = :pk and  begins_with(sk,:status)',
+                KeyConditionExpression: 'pk = :pk and begins_with(sk,:status)',
                 ExpressionAttributeValues: {
                     ':pk': { S: `USER` },
                     ':status': { S: `STATUS#ACTIVE` },
                 },
+                Limit: pageSize,
             });
 
             let lastKey: Record<string, AttributeValue> | undefined;
@@ -89,7 +90,7 @@ export class UserRepository implements IUserRepository {
             let result: User[] = [];
 
             do {
-                query.input.ExclusiveStartKey = JSON.parse(decrypt(paginationToken));
+                if (paginationToken) query.input.ExclusiveStartKey = JSON.parse(decrypt(paginationToken));
 
                 const { Items, LastEvaluatedKey } = await this.client.send(query);
 
@@ -98,11 +99,11 @@ export class UserRepository implements IUserRepository {
                 const items = Items?.map((item) => User.fromDynamoItem(item));
 
                 if (items) result = result.concat(items);
-            } while (result.length == pageSize || !lastKey);
+            } while (result.length < pageSize && lastKey);
 
             return {
-                items: result,
-                paginationToken: lastKey && encrypt(JSON.stringify(lastKey)),
+                items: result.map(({ data }) => data),
+                paginationToken: lastKey ? encrypt(JSON.stringify(lastKey)) : '',
             };
         } catch (error) {
             throw error;

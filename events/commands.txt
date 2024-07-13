@@ -2,4 +2,6 @@
 sam build GetUser; sam local invoke GetUser -e events/get-user.json --env-vars events/env.json
 sam build SeedUsers; sam local invoke SeedUsers -e events/seed.json --env-vars events/env.json
 sam build ListUsers; sam local invoke ListUsers -e events/list.json --env-vars events/env.json
+sam build ListPaginateUsers; sam local invoke ListPaginateUsers -e events/list-paginate-users.json --env-vars events/env.json
+
 ########## USER ##########
