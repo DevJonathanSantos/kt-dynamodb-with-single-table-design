@@ -1,5 +1,4 @@
 import { AttributeValue } from '@aws-sdk/client-dynamodb';
-import { randomUUID } from 'crypto';
 
 import { Item } from './item';
 
@@ -38,9 +37,7 @@ export class Asset extends Item<AssetProps> {
         return new Asset({ id: id.S!, name: name.S!, code: code.S!, type: type.S!, price: Number(price.N) });
     }
 
-    static create({ name, code, type, price }: AssetProps): Asset {
-        const id = randomUUID();
-
+    static create({ id, name, code, type, price }: AssetProps): Asset {
         return new Asset({ id, name, code, type, price });
     }
 }
