@@ -41,10 +41,10 @@ export class UserRepository implements IUserRepository {
         try {
             const query = new QueryCommand({
                 TableName: this.tableName,
-                KeyConditionExpression: 'pk = :pk and  begins_with(sk,:status)',
+                IndexName: 'GSI1',
+                KeyConditionExpression: 'sk=:sk',
                 ExpressionAttributeValues: {
-                    ':pk': { S: `USER` },
-                    ':status': { S: `STATUS#ACTIVE` },
+                    ':sk': { S: `USER#ACTIVE` },
                 },
             });
 
@@ -77,10 +77,10 @@ export class UserRepository implements IUserRepository {
         try {
             const query = new QueryCommand({
                 TableName: this.tableName,
-                KeyConditionExpression: 'pk = :pk and begins_with(sk,:status)',
+                IndexName: 'GSI1',
+                KeyConditionExpression: 'sk=:sk',
                 ExpressionAttributeValues: {
-                    ':pk': { S: `USER` },
-                    ':status': { S: `STATUS#ACTIVE` },
+                    ':sk': { S: `USER#ACTIVE` },
                 },
                 Limit: pageSize,
             });

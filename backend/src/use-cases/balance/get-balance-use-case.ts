@@ -1,13 +1,10 @@
-import { User } from '../../core/user';
-import { IUserRepository } from '../../repositories/user-repository';
+import { IWalletRepository } from '../../repositories/wallet-repository';
 
-export class GetUserUseCase {
-    constructor(private userRepository: IUserRepository) {}
+export class GetWalletUseCase {
+    constructor(private walletRepository: IWalletRepository) {}
 
-    async execute(userId: string) {
-        const { pk, sk } = User.getKey(userId);
-
-        const users = await this.userRepository.get(pk, sk);
+    async execute(userId: string, walletId: string) {
+        const users = await this.walletRepository.get(`WALLET#USER#${userId}`, walletId);
 
         return users;
     }

@@ -6,4 +6,10 @@ sam build ListPaginateUsers; sam local invoke ListPaginateUsers -e events/list-p
 
 ########## USER ##########
 
+########## BALANCE ##########
+
+sam build ListBalancesByWallet; sam local invoke ListBalancesByWallet -e events/list-balances-by-wallet.json --env-vars events/env.json
+
+########## BALANCE ##########
+
 sam build Seed; sam local invoke Seed -e events/seed.json --env-vars events/env.json

@@ -4,7 +4,7 @@ import { decrypt, encrypt } from '../utils/encrypt-pagination';
 
 export interface IBalanceRepository {
     create(wallet: Balance): Promise<void>;
-    listByWalletId(walletId: string): Promise<Balance[] | undefined>;
+    listByWalletId(walletId: string, onlyActive: boolean): Promise<Balance[] | undefined>;
     listPaginate(
         filter: { walletId: string },
         pageSize: number,
@@ -38,20 +38,25 @@ export class BalanceRepository implements IBalanceRepository {
         }
     }
 
-    async listByWalletId(walletId: string): Promise<Balance[] | undefined> {
+    async listByWalletId(walletId: string, onlyActive: boolean): Promise<Balance[] | undefined> {
         try {
             const query = new QueryCommand({
                 TableName: this.tableName,
-                KeyConditionExpression: 'PK = :pk ',
-                FilterExpression: '#status=:status',
+                KeyConditionExpression: 'pk = :pk ',
                 ExpressionAttributeValues: {
                     ':pk': { S: `BALANCE#WALLET#${walletId}` },
-                    ':status': { S: `ACTIVE` },
-                },
-                ExpressionAttributeNames: {
-                    '#status': 'status',
                 },
             });
+
+            if (!query.input.ExpressionAttributeValues) query.input.ExpressionAttributeValues = {};
+
+            if (onlyActive) {
+                query.input.FilterExpression = '#status=:status';
+                query.input.ExpressionAttributeValues[':status'] = { S: `ACTIVE` };
+                query.input.ExpressionAttributeNames = {
+                    '#status': 'status',
+                };
+            }
 
             let lastKey: Record<string, AttributeValue> | undefined;
 

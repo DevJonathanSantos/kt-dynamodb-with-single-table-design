@@ -15,10 +15,10 @@ export interface UserProps {
 
 export class User extends Item<UserProps> {
     get pk(): string {
-        return `USER`;
+        return `USER#${this.props.id!}`;
     }
     get sk(): string {
-        return `STATUS#ACTIVE#${this.props.id!}`;
+        return `USER#ACTIVE`;
     }
     get data(): UserProps {
         return this.props;
@@ -26,8 +26,8 @@ export class User extends Item<UserProps> {
 
     static getKey(id: string) {
         return {
-            pk: `USER`,
-            sk: id,
+            pk: `USER#${id}`,
+            sk: `USER#ACTIVE`,
         };
     }
 

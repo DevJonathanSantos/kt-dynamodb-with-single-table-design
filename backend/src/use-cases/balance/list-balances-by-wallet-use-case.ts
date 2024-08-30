@@ -1,11 +1,11 @@
-import { IUserRepository } from '../../repositories/user-repository';
+import { IBalanceRepository } from '../../repositories/balance-repository';
 
-export class ListPaginateUsersUseCase {
-    constructor(private userRepository: IUserRepository) {}
+export class ListBalancesByWalletUseCase {
+    constructor(private balanceRepository: IBalanceRepository) {}
 
-    async execute(pageSize: number, paginationToken: string) {
-        const users = await this.userRepository.listPaginate(pageSize, paginationToken);
+    async execute(walletId: string, onlyActive: boolean) {
+        const balances = await this.balanceRepository.listByWalletId(walletId, onlyActive);
 
-        return users;
+        return balances?.map(({ data }) => data);
     }
 }
